@@ -1,0 +1,10 @@
+{
+  "name": "GenreDivination-Editor",
+  "references": [
+    "GenreDivination"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": []
+}
