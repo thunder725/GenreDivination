@@ -727,8 +727,8 @@ public class GenreDivination : MonoBehaviour {
 
         if (commandParts[0] == "play")
         {
-            PlayButton.OnInteract();
             yield return null;
+            PlayButton.OnInteract();
             yield break;
         }
 
@@ -783,6 +783,9 @@ public class GenreDivination : MonoBehaviour {
                 yield break;
             }
 
+            // Tell TP the command was valid
+            yield return null;
+
             // Then, extract VST Bank from that value
             int _targetVstBank = _ruleseededMatchResult / 5;
 
@@ -827,8 +830,6 @@ public class GenreDivination : MonoBehaviour {
 
         // Submit
         SubmitButton.OnInteract();
-
-        yield break;
     }
 
     IEnumerator TwitchHandleForcedSolve()
