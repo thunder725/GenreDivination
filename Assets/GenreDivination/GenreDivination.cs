@@ -33,6 +33,7 @@ public class GenreDivination : MonoBehaviour {
 
     [SerializeField] KMSelectable SubmitButton;
     [SerializeField] KMSelectable PlayButton;
+    [SerializeField] KMSelectable StopButton;
     [SerializeField] KMSelectable PrefixLeftButton, PrefixRightButton;
     [SerializeField] KMSelectable AdjectiveLeftButton, AdjectiveRightButton;
     [SerializeField] KMSelectable StyleLeftButton, StyleRightButton;
@@ -48,6 +49,11 @@ public class GenreDivination : MonoBehaviour {
 
     [SerializeField] AudioClip solveSound, screenTextChangeSound, submitSound;
     [SerializeField] AudioClip[] buttonSounds;
+
+
+
+    /// <summary> Delegates handling the playing of all 4 audio clips in order (Drums, Bass, Chords, Lead). </summary>
+    KMAudio.KMAudioRef[] AudioPlayerDelegates = new KMAudio.KMAudioRef[4];
 
 
     /// <summary> For all 3 Genre Parts (Prefix, Adjective, Style), contains the index of the 25 selected Genre Parts, in the order of the manual. </summary>
@@ -111,6 +117,7 @@ public class GenreDivination : MonoBehaviour {
         // Submit & Play Button
         SubmitButton.OnInteract += delegate () { SubmitResult(); return false; } ;
         PlayButton.OnInteract += delegate () { PlayAllTracks(); return false; };
+        StopButton.OnInteract += delegate () { StopSoundsButtonPressed(); return false; };
 
         // Text Selection Buttons
         PrefixLeftButton.OnInteract += delegate () { OnGenrePartArrowButtonPressed(false, 0, PrefixLeftButton); return false; };
@@ -176,7 +183,7 @@ public class GenreDivination : MonoBehaviour {
         // Feedback
         PlayButton.AddInteractionPunch();
 
-        PlaySound(submitSound);
+        PlaySoundAndForget(submitSound);
 
         buttonMovementTimeRemaining = 0.3f;
         PlayButton.transform.localPosition += Vector3.down * 0.007f;
@@ -184,40 +191,93 @@ public class GenreDivination : MonoBehaviour {
 
         if (AllowMusicPlaying == false) { return; }
 
+        ModuleLog(false, "Playing Audio");
+
+        StopAllPreviousMusic();
+
         // Prevent music from being played for around 16 seconds.
+        AllowMusicPlaying = false;
         StartCoroutine(BlockAudioPlayCoroutine());
 
         // After the module is solved, the music that gets played is fully randomized!
         if (moduleSolved)
         {
-            PlaySound(DrumsClips[UnityEngine.Random.Range(0, 7)]);
-            PlaySound(BassClips[UnityEngine.Random.Range(0, 7)]);
-            PlaySound(ChordClips[UnityEngine.Random.Range(0, 7)]);
-            PlaySound(LeadClips[UnityEngine.Random.Range(0, 7)]);
+            AudioPlayerDelegates[0] = PlaySoundWithRef(DrumsClips[UnityEngine.Random.Range(0, 7)]);
+            AudioPlayerDelegates[1] = PlaySoundWithRef(BassClips[UnityEngine.Random.Range(0, 7)]);
+            AudioPlayerDelegates[2] = PlaySoundWithRef(ChordClips[UnityEngine.Random.Range(0, 7)]);
+            AudioPlayerDelegates[3] = PlaySoundWithRef(LeadClips[UnityEngine.Random.Range(0, 7)]);
         }
         else
         {
             // Can't just use DrumClips[SelectedClip[0]] because the order of the clips is dependant on Ruleseed
-            PlaySound(DrumsClips[RuleseedAllowedMusicClips[0][selectedClipIndices[0]]]);
-            PlaySound(BassClips[RuleseedAllowedMusicClips[1][selectedClipIndices[1]]]);
-            PlaySound(ChordClips[RuleseedAllowedMusicClips[2][selectedClipIndices[2]]]);
-            PlaySound(LeadClips[RuleseedAllowedMusicClips[3][selectedClipIndices[3]]]);
+            AudioPlayerDelegates[0] = PlaySoundWithRef(DrumsClips[RuleseedAllowedMusicClips[0][selectedClipIndices[0]]]);
+            AudioPlayerDelegates[1] = PlaySoundWithRef(BassClips[RuleseedAllowedMusicClips[1][selectedClipIndices[1]]]);
+            AudioPlayerDelegates[2] = PlaySoundWithRef(ChordClips[RuleseedAllowedMusicClips[2][selectedClipIndices[2]]]);
+            AudioPlayerDelegates[3] = PlaySoundWithRef(LeadClips[RuleseedAllowedMusicClips[3][selectedClipIndices[3]]]);
         }
 	}
 
     IEnumerator BlockAudioPlayCoroutine()
     {
-        AllowMusicPlaying = false;
-
         // The samples usually last slightly less than 16 seconds.
         yield return new WaitForSeconds(16f);
         AllowMusicPlaying = true;
     }
 
-    /// <summary> Simplified method to just play a sound from an AudioClip </summary>
-    public void PlaySound(AudioClip soundToPlay)
+    /// <summary> Simplified method to just play a sound from an AudioClip while being able to stop it earlier </summary>
+    KMAudio.KMAudioRef PlaySoundWithRef(AudioClip soundToPlay)
+    {
+        // Instead of just using PlaySoundAtTransformWithRef, since we don't want a loop,
+        // we have to manually call what's inside of the method to tell it "hey, don't loop the sound plz"
+        if (moduleAudio.HandlePlaySoundAtTransformWithRef != null)
+        {
+            return moduleAudio.HandlePlaySoundAtTransformWithRef(soundToPlay.name, transform, loop: false);
+        }
+
+
+        ModuleLog(true, "HandlePlaySoundAtTransformWithRef is false! Please contact thunder725 with the log!!");
+        return null;
+        // moduleAudio.PlaySoundAtTransform(soundToPlay.name, transform);
+    }
+
+    /// <summary> Simplified method to just play a sound from an AudioClip and forget about it </summary>
+    void PlaySoundAndForget(AudioClip soundToPlay)
     {
         moduleAudio.PlaySoundAtTransform(soundToPlay.name, transform);
+    }
+
+
+    void StopSoundsButtonPressed()
+    {
+        // Button Feedback here
+        StopButton.AddInteractionPunch();
+
+        PlaySoundAndForget(submitSound);
+
+        buttonMovementTimeRemaining = 0.3f;
+        StopButton.transform.localPosition += Vector3.down * 0.005f;
+
+        if (AllowMusicPlaying == true) { return; }
+
+        ModuleLog(false, "Stopping Sounds by Button Press!");
+
+        StopAllPreviousMusic();
+
+        // Allow Audio to be played!
+        AllowMusicPlaying = true;
+        StopCoroutine("BlockAudioPlayCoroutine");
+    }
+
+    void StopAllPreviousMusic()
+    {
+        for (int i = 0; i < 4; i++)
+        {
+            if (AudioPlayerDelegates[i] != null)
+            {
+                AudioPlayerDelegates[i].StopSound();
+                AudioPlayerDelegates[i] = null;
+            }
+        }
     }
 
 
@@ -226,7 +286,7 @@ public class GenreDivination : MonoBehaviour {
         // Button Feedback here
         SubmitButton.AddInteractionPunch();
 
-        PlaySound(submitSound);
+        PlaySoundAndForget(submitSound);
 
         buttonMovementTimeRemaining = 0.3f;
         SubmitButton.transform.localPosition += Vector3.down * 0.005f;
@@ -256,8 +316,8 @@ public class GenreDivination : MonoBehaviour {
         // Feedback
         pressedButton.AddInteractionPunch(0.6f);
 
-        PlaySound(buttonSounds.PickRandom());
-        PlaySound(screenTextChangeSound);
+        PlaySoundAndForget(buttonSounds.PickRandom());
+        PlaySoundAndForget(screenTextChangeSound);
 
         buttonMovementTimeRemaining = 0.3f;
         pressedButton.transform.localPosition += Vector3.down * 0.003f;
@@ -281,7 +341,7 @@ public class GenreDivination : MonoBehaviour {
     void OnChangeVstBankButtonPressed(int genrePartIndex)
     {
         // Feedback
-        PlaySound(screenTextChangeSound);
+        PlaySoundAndForget(screenTextChangeSound);
         PrefixVstBankButton.AddInteractionPunch(0.6f);
 
         selectedVstBanks[genrePartIndex] = (selectedVstBanks[genrePartIndex] + 1) % 5;
@@ -388,7 +448,7 @@ public class GenreDivination : MonoBehaviour {
         Vector3 position;
         float progress = 15f * Time.deltaTime;
 
-        for (int i = 0; i < 8; i ++)
+        for (int i = 0; i < 9; i ++)
         {
             switch (i)
             {
@@ -400,6 +460,7 @@ public class GenreDivination : MonoBehaviour {
                 case 5: button = StyleRightButton; break;
                 case 6: button = PlayButton; break;
                 case 7: button = SubmitButton; break;
+                case 8: button = StopButton; break;
             }
 
             position = button.transform.localPosition;
@@ -510,6 +571,8 @@ public class GenreDivination : MonoBehaviour {
     {
         MonoRandom Rng = ruleseedManager.GetRNG();
 
+        ModuleLog(true, "Using Ruleseed {0}:", Rng.Seed);
+
         // Initialize the default values
         if (Rng.Seed == 1)
         {
@@ -523,8 +586,6 @@ public class GenreDivination : MonoBehaviour {
             RuleseedAllowedGenreParts[2] = RuleseedAllowedGenreParts[0];
             return;
         }
-
-        ModuleLog(true, "Ruleseed {0} Detected! Shuffling available music clips and answers!", Rng.Seed);
 
         // Shuffle the Audio Clips
         for (int i = 0; i < 4; i ++)
@@ -660,7 +721,7 @@ public class GenreDivination : MonoBehaviour {
     void SolveModule()
     {
         // Solve Feedback
-        PlaySound(solveSound);
+        PlaySoundAndForget(solveSound);
 
         moduleSolved = true;
         module.HandlePass();
@@ -708,7 +769,7 @@ public class GenreDivination : MonoBehaviour {
     // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 #pragma warning disable 414
-    private readonly string TwitchHelpMessage = @"“!{0} Play” to play the music sequence. “!{0} Submit Flash Synk Craftstep” to submit an answer. Hyphens and spaces both work (Lo-Pop is treated the same as Lo Pop). ";
+    private readonly string TwitchHelpMessage = @"“!{0} Play” to play the music sequence, and “!{0} Stop” to stop it. “!{0} Submit Flash Synk Craftstep” to submit an answer. Hyphens and spaces both work (Lo-Pop is treated the same as Lo Pop). ";
 #pragma warning restore 414
 
 
@@ -721,7 +782,7 @@ public class GenreDivination : MonoBehaviour {
 
         if (commandParts.Length == 0)
         {
-            yield return "sendtochaterror {0} Please submit a non-empty command. Use “!{0} Play” or “!{0} Submit Flash Synk Craftstep”.";
+            yield return "sendtochaterror {0} Please submit a non-empty command. Use “!{0} Play”, “!{0} Stop” or “!{0} Submit Flash Synk Craftstep”.";
             yield break;
         }
 
@@ -729,6 +790,13 @@ public class GenreDivination : MonoBehaviour {
         {
             yield return null;
             PlayButton.OnInteract();
+            yield break;
+        }
+
+        if (commandParts[0] == "stop" || commandParts[0] == "pause")
+        {
+            yield return null;
+            StopButton.OnInteract();
             yield break;
         }
 
