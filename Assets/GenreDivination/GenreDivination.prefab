@@ -288,7 +288,7 @@ GameObject:
   - component: {fileID: 102894049461948354}
   - component: {fileID: 114023524675758914}
   m_Layer: 0
-  m_Name: Pause_Text
+  m_Name: Stop_Text
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -467,7 +467,7 @@ GameObject:
   - component: {fileID: 114273590611280854}
   - component: {fileID: 114522647590692068}
   m_Layer: 0
-  m_Name: PauseButton
+  m_Name: StopButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1051,7 +1051,7 @@ GameObject:
   - component: {fileID: 33927636167687988}
   - component: {fileID: 114649953419909574}
   m_Layer: 0
-  m_Name: Pause-Highlight
+  m_Name: Stop_Highlight
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1745,7 +1745,7 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1313985619335440}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.0578, y: 0.0165, z: 0.0465}
+  m_LocalPosition: {x: -0.0578, y: 0.0165, z: 0.0464}
   m_LocalScale: {x: 0.59999996, y: 0.29999998, z: 0.25}
   m_Children:
   - {fileID: 4155394862221210}
@@ -4154,7 +4154,7 @@ MonoBehaviour:
   ruleseedManager: {fileID: 114535237405727746}
   SubmitButton: {fileID: 114925081833216766}
   PlayButton: {fileID: 114483238540822488}
-  PauseButton: {fileID: 114273590611280854}
+  StopButton: {fileID: 114273590611280854}
   PrefixLeftButton: {fileID: 114870804824104044}
   PrefixRightButton: {fileID: 114373867876283212}
   AdjectiveLeftButton: {fileID: 114143439397719686}
@@ -4656,7 +4656,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: adf69c2de51bd3c43bbd9bc22578ee08, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _seed: 1435
+  _seed: 1
 --- !u!114 &114554877009056504
 MonoBehaviour:
   m_ObjectHideFlags: 1

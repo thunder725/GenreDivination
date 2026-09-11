@@ -193,11 +193,12 @@ public class GenreDivination : MonoBehaviour {
 
         ModuleLog(false, "Playing Audio");
 
-        StopAllPreviousMusic();
+        // StopAllPreviousMusic();
 
         // Prevent music from being played for around 16 seconds.
         AllowMusicPlaying = false;
-        StartCoroutine(BlockAudioPlayCoroutine());
+        if (BlockAudioPlayCoroutine != null) { StopCoroutine(BlockAudioPlayCoroutine); }
+        BlockAudioPlayCoroutine = StartCoroutine(BlockAudioPlay());
 
         // After the module is solved, the music that gets played is fully randomized!
         if (moduleSolved)
@@ -217,7 +218,8 @@ public class GenreDivination : MonoBehaviour {
         }
 	}
 
-    IEnumerator BlockAudioPlayCoroutine()
+    Coroutine BlockAudioPlayCoroutine;
+    IEnumerator BlockAudioPlay()
     {
         // The samples usually last slightly less than 16 seconds.
         yield return new WaitForSeconds(16f);
@@ -265,7 +267,7 @@ public class GenreDivination : MonoBehaviour {
 
         // Allow Audio to be played!
         AllowMusicPlaying = true;
-        StopCoroutine("BlockAudioPlayCoroutine");
+        if (BlockAudioPlayCoroutine != null) { StopCoroutine(BlockAudioPlayCoroutine); }
     }
 
     void StopAllPreviousMusic()
@@ -578,7 +580,7 @@ public class GenreDivination : MonoBehaviour {
         {
             RuleseedAllowedMusicClips[0] = new int[5] { 4, 1, 6, 0, 3 };
             RuleseedAllowedMusicClips[1] = new int[5] { 6, 2, 5, 0, 4 };
-            RuleseedAllowedMusicClips[2] = new int[5] { 5, 2, 1, 3, 4 };
+            RuleseedAllowedMusicClips[2] = new int[5] { 0, 2, 1, 3, 4 };
             RuleseedAllowedMusicClips[3] = new int[5] { 1, 4, 5, 3, 6 };
 
             RuleseedAllowedGenreParts[0] = new int[25] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24 };
