@@ -63,6 +63,8 @@ public class GenreDivination : MonoBehaviour {
     /// <summary> Contains the 4 selected Clips for the 4 instruments, as indices into RuleseedAllowedMusicClips. </summary>
     int[] selectedClipIndices = new int[4];
 
+    /// <summary> All possible Edgework Orders for the Drums, including Batteries, Indicators, Port, First SN Digit, Last SN Digit. </summary>
+    List<int[]> RuleseedEdgeworkOrders;
 
     /// <summary> The Genre Parts that are expected to be submitted in order to solve the module. </summary>
     int[] expectedGenreParts = new int[3];
@@ -586,6 +588,15 @@ public class GenreDivination : MonoBehaviour {
             RuleseedAllowedGenreParts[0] = new int[25] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24 };
             RuleseedAllowedGenreParts[1] = RuleseedAllowedGenreParts[0];
             RuleseedAllowedGenreParts[2] = RuleseedAllowedGenreParts[0];
+
+            RuleseedEdgeworkOrders = new List<int[]>()
+            {
+                new int[3]{ 0, 1, 2 },
+                new int[3]{ 1, 2, 0 },
+                new int[3]{ 2, 0, 1 },
+                new int[3]{ 1, 0, 2 },
+                new int[3]{ 2, 1, 0 }
+            };
             return;
         }
 
@@ -614,6 +625,32 @@ public class GenreDivination : MonoBehaviour {
             ModuleLog(false, "Available {0} names are: {1}", GetGenrePartDisplayNameByIndex(i),
                 RuleseedAllowedGenreParts[i].Select(x => GetGenrePartArraysByIndex(i)[x]).Join(", "));
         }
+
+        // Shuffle the Answer Edgework Order
+        RuleseedEdgeworkOrders = new List<int[]>();
+
+        // Populate all possible options in order because I'm too lazy
+        for (int x = 0; x < 5; x++)
+        {
+            for (int y = 0; y < 5; y++)
+            {
+                for (int z = 0; z < 5; z++)
+                {
+                    if (x != y && x != z && y != z)
+                    {
+                        RuleseedEdgeworkOrders.Add(new int[3] { x, y, z });
+                    }
+                }
+            }
+        }
+        Rng.ShuffleFisherYates(RuleseedEdgeworkOrders);
+
+        string[] logNames = new string[5] { "Batteries", "Indicators", "Ports", "First SN Digit", "Last SN Digit"};
+        for (int i = 0; i < 5; i++)
+        {
+            ModuleLog(false, "Drum Track {0} will use {1}, {2} and {3}",
+                i, logNames[RuleseedEdgeworkOrders[i][0]], logNames[RuleseedEdgeworkOrders[i][1]], logNames[RuleseedEdgeworkOrders[i][2]]);
+        }
     }
 
     void SelectMusicSamples()
@@ -636,6 +673,8 @@ public class GenreDivination : MonoBehaviour {
         int _batteryCount = bombInfo.GetBatteryCount();
         int _indicatorCount = bombInfo.GetIndicators().Count();
         int _portCount = bombInfo.GetPortCount();
+        int _firstSnDigit = bombInfo.GetSerialNumberNumbers().First();
+        int _lastSnDigit = bombInfo.GetSerialNumberNumbers().Last();
 
         ModuleLog(true, "Found {0} batteries, {1} indicators and {2} ports.", _batteryCount, _indicatorCount, _portCount);
 
@@ -646,42 +685,23 @@ public class GenreDivination : MonoBehaviour {
 
 
         // Drums number indicates which value inside this VST bank to use
-        switch (selectedClipIndices[0])
+        // 0 -> Batteries
+        // 1 -> Indicators
+        // 2 -> Ports
+        // 3 -> First Sn Digit
+        // 4 -> Last Sn Digit
+        Func<int>[] AnswerEdgeworkArray = new Func<int>[5]
         {
-            case 0:
-                AnswerPerGenrePart[0] = Mathf.Clamp(_batteryCount, 1, 5) - 1;
-                AnswerPerGenrePart[1] = Mathf.Clamp(_indicatorCount, 1, 5) - 1;
-                AnswerPerGenrePart[2] = Mathf.Clamp(_portCount, 1, 5) - 1;
-                break;
+            () => Mathf.Clamp(_batteryCount, 1, 5) - 1,
+            () => Mathf.Clamp(_indicatorCount, 1, 5) - 1,
+            () => Mathf.Clamp(_portCount, 1, 5) - 1,
+            () => Mathf.Clamp(_firstSnDigit, 1, 5) - 1,
+            () => Mathf.Clamp(_lastSnDigit, 1, 5) - 1,
+        };
 
-            case 1:
-                AnswerPerGenrePart[0] = Mathf.Clamp(_indicatorCount, 1, 5) - 1;
-                AnswerPerGenrePart[1] = Mathf.Clamp(_portCount, 1, 5) - 1;
-                AnswerPerGenrePart[2] = Mathf.Clamp(_batteryCount, 1, 5) - 1;
-                break;
-
-            case 2:
-                AnswerPerGenrePart[0] = Mathf.Clamp(_portCount, 1, 5) - 1;
-                AnswerPerGenrePart[1] = Mathf.Clamp(_batteryCount, 1, 5) - 1;
-                AnswerPerGenrePart[2] = Mathf.Clamp(_indicatorCount, 1, 5) - 1;
-                break;
-
-            case 3:
-                AnswerPerGenrePart[0] = Mathf.Clamp(_indicatorCount, 1, 5) - 1;
-                AnswerPerGenrePart[1] = Mathf.Clamp(_batteryCount, 1, 5) - 1;
-                AnswerPerGenrePart[2] = Mathf.Clamp(_portCount, 1, 5) - 1;
-                break;
-
-            case 4:
-                AnswerPerGenrePart[0] = Mathf.Clamp(_portCount, 1, 5) - 1;
-                AnswerPerGenrePart[1] = Mathf.Clamp(_indicatorCount, 1, 5) - 1;
-                AnswerPerGenrePart[2] = Mathf.Clamp(_batteryCount, 1, 5) - 1;
-                break;
-
-            default:
-                ModuleLogError(true, "Received unknown Drum Clip Number: {0}. Solving module to avoid softlocks. Please report this to thunder725.", selectedClipIndices[0]);
-                SolveModule();
-                return;
+        for (int i = 0; i < 3; i++)
+        {
+            AnswerPerGenrePart[i] = AnswerEdgeworkArray[RuleseedEdgeworkOrders[selectedClipIndices[0]][i]].Invoke();
         }
 
         ModuleLog(true, "Drum Clip is number {0}, so in each respective VST Bank, Prefix will be the number {1}, Adjective the number {2}, and Style the number {3}. Remember that values are clamped between 1 and 5.",
