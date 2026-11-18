@@ -56,8 +56,14 @@ MonoBehaviour:
     =-= 1.2.0
 
     - Added Ruleseed shuffling to the Edgework Condition of the Drums column in page
-    1'
-  version: 1.2.0
+    1
+
+
+    =-= 1.2.1
+
+    - Tweaked the casing model to have the screens inset and not outset. The change
+    is almost invisible from the front, no need to update the SVG nor Icon!'
+  version: 1.2.1
   outputFolder: build
   debugBuild: 1
   previewImage: {fileID: 2800000, guid: 96d407997e5dd3346a4dd3e76a099980, type: 3}
